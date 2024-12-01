@@ -13,7 +13,7 @@ public class Products {
     private  String imageUrl;
     private String description;
     private double price;
-    private int quantity;
+    private int stock;
     private String  category;
     private String promotionCode;
     private double rating;

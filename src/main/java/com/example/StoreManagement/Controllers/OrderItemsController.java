@@ -34,7 +34,7 @@ public class OrderItemsController {
             int newQuantity = existingCartItem.getQuantity() + 1;
 
             // Ensure stock availability for the new quantity
-            if (product.getQuantity() < newQuantity) {
+            if (product.getStock() < newQuantity) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Requested quantity exceeds available stock");
             }
 

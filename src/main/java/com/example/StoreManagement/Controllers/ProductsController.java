@@ -46,7 +46,7 @@ public class ProductsController {
                     .body("Invalid category: " + products.getCategory());
         }
 
-        if (products.getQuantity()<0){
+        if (products.getStock()<0){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("stock values can't be negative");
         }
 
@@ -93,8 +93,8 @@ public class ProductsController {
         if(productsRepo.findByName(updateRequest.getName())!=null){
             product.setName(updateRequest.getName());
         }
-        if (updateRequest.getQuantity() >0) {
-            product.setQuantity(updateRequest.getQuantity());
+        if (updateRequest.getStock() >0) {
+            product.setStock(updateRequest.getStock());
         }
 
         if (updateRequest.getDescription() != null) {

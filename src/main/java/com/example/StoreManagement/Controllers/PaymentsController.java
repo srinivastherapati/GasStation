@@ -20,6 +20,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/payments")
+@CrossOrigin
 public class PaymentsController {
     @Autowired
     private PaymentsRepo paymentsRepo;
@@ -85,7 +86,7 @@ public class PaymentsController {
         cartItems.forEach((cartItem)->{
             Products products=productsRepo.findById(cartItem.getProductId()).orElse(null);
             if(products!=null){
-                products.setQuantity(products.getQuantity()-cartItem.getQuantity());
+                products.setStock(products.getStock()-cartItem.getQuantity());
                 productsRepo.save(products);
             }
         });

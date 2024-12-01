@@ -14,6 +14,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/review")
+@CrossOrigin
 public class ReviewController {
     @Autowired
     private ReviewsRepo reviewRepo;

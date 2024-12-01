@@ -2,15 +2,19 @@ package com.example.StoreManagement.Controllers;
 
 
 import com.example.StoreManagement.Model.Customer;
+import com.example.StoreManagement.Model.Orders;
+import com.example.StoreManagement.Model.Products;
 import com.example.StoreManagement.Repositories.CustomerRepository;
+import com.example.StoreManagement.Repositories.OrdersRepo;
+import com.example.StoreManagement.Repositories.ProductsRepo;
 import com.example.StoreManagement.Service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/customer")
@@ -20,9 +24,15 @@ public class CustomerController {
     private CustomerRepository customersRepo;
     @Autowired
     private CustomerService customerService;
+    @Autowired
+    private OrdersRepo ordersRepo;
 
     @PostMapping("/register")
     public ResponseEntity<?> customerRegister(@RequestBody Customer customers){
+        System.out.println("entered register api");
+        if(customers.getUserName()==null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("userName is required");
+        }
         if(customers.getEmail()==null){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("email is required");
         }
@@ -45,6 +55,7 @@ public class CustomerController {
 
     @PostMapping("/login")
     public  ResponseEntity<?> userLogin(@RequestBody Customer customer){
+        System.out.println("entered login api");
         String email = customer.getEmail();
         String password = customer.getPassword();
 
@@ -53,6 +64,8 @@ public class CustomerController {
             Map<String, String> adminDetails = new HashMap<>();
             adminDetails.put("emailId", email);
             adminDetails.put("role", "admin");
+            adminDetails.put("userName","admin");
+            adminDetails.put("userId","12345678");
             return ResponseEntity.ok(adminDetails);
         }
         Customer existingCustomer = customersRepo.findByEmail(email);
@@ -62,19 +75,53 @@ public class CustomerController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Email password mismatch");
             }
             // Return customer details
+            System.out.println(existingCustomer.getUserName());
+            System.out.println(existingCustomer.getId());
             Map<String, String> customerDetails = new HashMap<>();
             customerDetails.put("emailId", existingCustomer.getEmail());
             customerDetails.put("userName", existingCustomer.getUserName());
             customerDetails.put("role", "customer");
-            customerDetails.put("userId",customer.getId());
+            customerDetails.put("userId",existingCustomer.getId());
             return ResponseEntity.ok(customerDetails);
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User does not exist");
     }
+    @GetMapping("/get")
+    public ResponseEntity<?> getAllCustomers() {
+        List<Customer> customers = customersRepo.findAll();
+        if (customers.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.EMPTY_LIST);
+        }
 
-//    @GetMapping("getAll")
-//    public ResponseEntity<?> getAllCustomers(){
-//
-//    }
+        List<Map<String, Object>> response = customers.stream().map(customer -> {
+            Map<String, Object> customerDetails = new HashMap<>();
+
+            // Basic customer details
+            customerDetails.put("customerName", customer.getUserName());
+            customerDetails.put("customerEmail", customer.getEmail());
+
+            // Fetch customer-related data from Products collection
+            List<Orders> customerOrders = ordersRepo.findByCustomerId(customer.getId());
+            customerDetails.put("numberOfOrders",customerOrders.size());
+
+            // Calculate total order value
+            double totalOrderValue = customerOrders.stream()
+                    .mapToDouble(Orders::getTotalAmount) // Assuming `getPrice()` exists in Product
+                    .sum();
+
+            // Get the latest order date
+            Optional<Date> lastOrderDate = customerOrders.stream()
+                    .map(Orders::getOrderDate) // Assuming `getOrderDate()` exists in Product
+                    .max(Date::compareTo);
+
+            customerDetails.put("customerTotalOrderValue", totalOrderValue);
+            customerDetails.put("lastOrderDate", lastOrderDate.orElse(null)); // Default to null if no orders exist
+            customerDetails.remove("admin@admin.com");
+            return customerDetails;
+        }).toList();
+
+        return ResponseEntity.ok(response);
+    }
+
 
 }
