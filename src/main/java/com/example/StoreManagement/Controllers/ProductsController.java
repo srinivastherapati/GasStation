@@ -144,6 +144,9 @@ public class ProductsController {
         if (updateRequest.getDescription() != null) {
             product.setDescription(updateRequest.getDescription());
         }
+        if (updateRequest.getUnits() != null) {
+            product.setUnits(updateRequest.getUnits());
+        }
         if(updateRequest.getImageUrl()!=null){
             product.setImageUrl(updateRequest.getImageUrl());
         }
