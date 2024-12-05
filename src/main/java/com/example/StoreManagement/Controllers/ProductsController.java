@@ -24,6 +24,8 @@ public class ProductsController {
 
     @PostMapping("/add")
     public ResponseEntity<?> createProduct(@RequestBody Products products){
+        System.out.println("entered add product");
+        System.out.println(products.getCategory());
         if(products.getName()==null){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("product name can't be  null");
         }
@@ -38,12 +40,37 @@ public class ProductsController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("product image required");
         }
         try {
-            // Attempt to validate the category by converting to an enum
-            Category validCategory = Category.valueOf((products.getCategory()));
+            Category validCategory = Category.valueOf(products.getCategory().toUpperCase());
+
+            // Set units based on category
+            switch (validCategory) {
+                case FOOD:
+                case GROCERY:
+                    products.setUnits("lbs"); // Example: measured in pounds
+                    break;
+
+                case DAIRY:
+                    products.setUnits("liter"); // Example: measured in liters
+                    break;
+
+                case SNACKS:
+                    products.setUnits("packet"); // Example: measured in packets
+                    break;
+
+                case GAS:
+                    products.setUnits("gallon"); // Example: measured in gallons
+                    break;
+
+                case TOBACCO:
+                    products.setUnits("pack"); // Example: measured in packs
+                    break;
+
+                default:
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body("Unknown category: " + products.getCategory());
+            }
         } catch (IllegalArgumentException e) {
-            // Return a bad request response if the category is invalid
-            return ResponseEntity.badRequest()
-                    .body("Invalid category: " + products.getCategory());
+            return ResponseEntity.badRequest().body("Invalid category: " + products.getCategory());
         }
 
         if (products.getStock()<0){
@@ -53,6 +80,9 @@ public class ProductsController {
         if(products.getPrice()<0){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("product price can't be negative");
         }
+        if (products.getUnits()==null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Units rae required");
+        }
         products.setRating(0);
 
         productsRepo.save(products);
@@ -61,23 +91,37 @@ public class ProductsController {
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<String> deleteProductByName(@PathVariable String id) {
+        System.out.println("entrred delete ;product");
         // Check if the product exists by name
         Products products=productsRepo.findById(id).orElse(null);
         if (products==null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("Product with id " + id + " does not exist.");
         }
+        System.out.println(products.getName());
 
         // Perform the delete operation
         productsService.deleteProductByName(products.getName());
         return ResponseEntity.ok("Product with name " + products.getName() + " has been deleted successfully.");
     }
+    @PatchMapping("/update-quantity/{id}")
+    public ResponseEntity<?> updateQuantity(@PathVariable String id,@RequestBody String  type) {
+        Products item = productsRepo.findById(id).orElse(null);
+        if (item == null ) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Item not found in cart");
+        }
+        item.setStock(type.equals("increment")?item.getStock()+1:item.getStock()-1);
+        productsRepo.save(item);
+        return ResponseEntity.ok("Quantity updated");
+    }
 
-    @PatchMapping("/update/{id}")
+    @PutMapping("/update/{id}")
     public ResponseEntity<String> updateProduct(
             @PathVariable String id,
             @RequestBody Products updateRequest) {
-
+        System.out.println("entered update item");
+        System.out.println(updateRequest);
+        System.out.println(id);
         // Check if the product exists
         Optional<Products> optionalProduct = productsService.getProductById(id);
         if (optionalProduct.isEmpty()) {

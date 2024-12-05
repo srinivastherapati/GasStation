@@ -31,6 +31,7 @@ public class OrdersController {
     public ResponseEntity<?> placeOrder(@PathVariable String customerId, @RequestBody Map<String, Object> payload) {
         Map<String, Object> orderList = (Map<String, Object>) payload.get("order");
         List<Map<String, Object>> items = (List<Map<String, Object>>) orderList.get("items");
+        Map<String, Object> customers = (Map<String, Object>) orderList.get("customer");
 
         if (items.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Cart is empty");
@@ -39,8 +40,10 @@ public class OrdersController {
         double totalAmount = items.stream()
                 .mapToDouble(item -> {
                     String productName = (String) item.get("name");
+                    System.out.println(productName);
                     int quantity = (int) item.get("quantity");
                     Products product = productsRepo.findByName(productName);
+                    System.out.println(product);
                     if (product == null || product.getStock() < quantity) {
                         throw new IllegalArgumentException("Invalid quantity or product not available.");
                     }
@@ -88,6 +91,7 @@ public class OrdersController {
         order.setCustomerId(customerId);
         order.setOrderDate(new Date());
         order.setStatus("PLACED");
+        order.setDeliveryOption((String) customers.get("deliveryOption"));
         order.setTotalAmount(totalAmount);
         order.setOrderItemIds(orderItemList); // Embed the order items
         ordersRepo.save(order);
@@ -141,7 +145,7 @@ public class OrdersController {
             orderDetails.put("totalPayment", order.getTotalAmount());
             orderDetails.put("orderDate",order.getOrderDate());
             orderDetails.put("status",order.getStatus());
-
+            orderDetails.put("deliveryType",order.getDeliveryOption());
             // Fetch products from OrderItems
             List<OrderItems> items = orderItemsRepo.findByOrderId(order.getId());
             List<Map<String, Object>> products = items.stream().map(item -> {
@@ -188,8 +192,9 @@ public class OrdersController {
             orderDetails.put("orderDate",order.getOrderDate());
             orderDetails.put("status",order.getStatus());
             Customer customer=customerRepository.findById(order.getCustomerId()).orElse(null);
-            orderDetails.put("customerName",customer.getUserName());
+            orderDetails.put("customerName",customer.getFirstName());
             orderDetails.put("customerEmail",customer.getEmail());
+            orderDetails.put("deliveryType",order.getDeliveryOption());
             // Fetch products from OrderItems
             List<OrderItems> items = orderItemsRepo.findByOrderId(order.getId());
             List<Map<String, Object>> products = items.stream().map(item -> {

@@ -16,5 +16,6 @@ public class Orders {
     private Date orderDate;
     private String status;
     private double totalAmount;
+    private String deliveryOption;
     private List<String> orderItemIds;
 }

@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("order-items")
@@ -53,17 +54,6 @@ public class OrderItemsController {
         return ResponseEntity.ok(orderItem);
     }
 
-    }
-
-    @PatchMapping("/update-quantity/{id}")
-    public ResponseEntity<?> updateQuantity(@PathVariable String id) {
-        OrderItems item = orderItemRepo.findById(id).orElse(null);
-        if (item == null || item.getOrderId() != null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Item not found in cart");
-        }
-        item.setQuantity(item.getQuantity()+1);
-        orderItemRepo.save(item);
-        return ResponseEntity.ok("Quantity updated");
     }
 
     @DeleteMapping("/remove/{id}")
